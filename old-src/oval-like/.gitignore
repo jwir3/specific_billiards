@@ -1,0 +1,7 @@
+.ipynb_checkpoints/**
+data/**
+results/**
+logs/**
+coverage.lcov
+.coverage
+billiards_eccentricity_sweep.gif

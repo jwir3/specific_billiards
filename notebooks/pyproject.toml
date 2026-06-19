@@ -1,0 +1,14 @@
+[project]
+name = "notebooks"
+version = "0.1.0"
+description = "Jupyter Notebooks for Billiards"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "oval_like",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.4"
+]
+
+[tool.uv.sources]
+oval_like = { path = "../oval_like", editable = true }

@@ -1,0 +1,28 @@
+[project]
+name = "oval_like"
+version = "0.1.0"
+description = "An Oval-like billiard simulation."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "argus_engine",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.4",
+    "pandas>=3.0.2",
+    "pytest>=9.0.3",
+    "scipy>=1.17.1",
+    "tqdm>=4.67.3",
+    "typing-extensions>=4.15.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+
+[tool.uv.sources]
+argus_engine = { path = "../../argus_engine", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
