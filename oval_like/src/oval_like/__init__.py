@@ -16,10 +16,11 @@ class OvalLikeBilliard(Billiard):
         num_extra_ics: int = 0,  # the number of additional initial conditions to generate
         should_output_logs: bool = False,  # whether or not logs should be generated
     ):
+        super().__init__(num_extra_ics)
+
         self.r0 = r0
         self.m = mode
         self.eccentricity = eccentricity
-        self.num_extra_ics = num_extra_ics
         self.tolerance = 1e-12
         self.root_passes = 100
         self.trajectory_steps = 200
