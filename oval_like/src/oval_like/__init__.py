@@ -1,5 +1,6 @@
 import os
-from typing import Iterator
+from collections.abc import Iterator
+from typing import TypedDict, Unpack
 
 import numpy as np
 from argus_engine.billiard_base import Billiard, BoundaryException
@@ -30,26 +31,57 @@ class OvalLikeBilliard(Billiard):
         if self.should_output_logs and not os.path.exists("logs"):
             os.makedirs("logs")
 
+    class ResolverKwargs(TypedDict, total=False):
+        """Keyword arguments expected by the boundary resolver.
+
+        Attributes:
+            theta (float | str | int): The angle parameter used to calculate the boundary.
+        """
+
+        theta: float | str | int
+
+    def _resolve_theta(self, **kwargs: Unpack[ResolverKwargs]) -> float:
+        """Resolves and validates the theta parameter from the provided keyword arguments.
+
+        Parameters:
+            **kwargs: Arbitrary keyword arguments unpacked from ResolverKwargs.
+                Keyword Args:
+                    theta (float | str | int): The required angle parameter.
+
+        Returns:
+            float: The explicitly casted float value of theta.
+
+        Raises:
+            BoundaryException: If 'theta' is completely missing from the provided kwargs.
+        """
+        if "theta" not in kwargs:
+            raise BoundaryException("theta was not provided")
+
+        # The type checker now knows kwargs["theta"] is float | str | int
+        theta: float = float(kwargs["theta"])
+        return theta
+
     @override
-    def boundary_point(self, **kwargs) -> float | tuple[float, float]:
+    def boundary_point(
+        self, **kwargs: Unpack[ResolverKwargs]
+    ) -> float | tuple[float, float]:
         """
         Calculate the boundary radius at angle theta.
 
         This actually calculates the radius of the boundary at some angle, theta, in polar coordinates.
 
         Parameters:
-            **kwargs: Arbitrary keyword arguments.
+            **kwargs: Arbitrary keyword arguments. Note: This is more specific than the base class' architecture.
               - theta (float): The angle, in polar coordinates, at which to calculate the radius.
 
         Returns:
             The radius of the billiard at this point.
         """
-        if "theta" not in kwargs or kwargs["theta"] is None:
-            raise BoundaryException("theta was not provided")
 
-        theta: float = float(kwargs["theta"])
+        # The double-asterisk unpacks these into a dictionary.
+        theta = self._resolve_theta(**kwargs)
 
-        return self.r0 / (1.0 + self.eccentricity * np.cos(self.m * theta))
+        return float(self.r0 / (1.0 + self.eccentricity * np.cos(self.m * theta)))
 
     @override
     def boundary(self, num_points: int = 1000) -> Iterator[tuple[float, float]]:
@@ -64,3 +96,25 @@ class OvalLikeBilliard(Billiard):
         y_vals = [r * np.sin(theta) for r, theta in zip(r_vals, theta_vals)]
 
         return zip(x_vals, y_vals)
+
+    @override
+    def boundary_derivative(self, **kwargs: Unpack[ResolverKwargs]) -> float:
+        """Calculates the derivative of the boundary radius with respect to theta.
+
+        This method computes the rate of change of the boundary's radius at a
+        specific angle by evaluating the derivative of the billiard's polar equation.
+
+        Parameters:
+            **kwargs: Arbitrary keyword arguments unpacked from ResolverKwargs.
+              - theta (float | str | int): The required angle parameter passed within kwargs.
+
+        Returns:
+            float: The calculated derivative of the radius at the given angle.
+        """
+        theta = self._resolve_theta(**kwargs)
+
+        derivative: float = float(
+            self.r0 * self.eccentricity * self.m * np.sin(self.m * theta)
+        ) / ((1.0 + self.eccentricity * np.cos(self.m * theta)) ** 2)
+
+        return float(derivative)

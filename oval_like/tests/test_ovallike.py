@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 # from argus_engine.util import MockHeartbeat
@@ -5,14 +6,79 @@ from oval_like import OvalLikeBilliard
 
 
 @pytest.fixture
-def basic_chaotic_billiard():
+def basic_chaotic_billiard() -> OvalLikeBilliard:
     """Returns a mildly deformed billiard table known to be chaotic."""
     return OvalLikeBilliard(r0=1.0, eccentricity=0.2, mode=3, num_extra_ics=0)
 
 
-def test_basic_billiard_construction(basic_chaotic_billiard):
+def test_basic_billiard_construction(basic_chaotic_billiard: OvalLikeBilliard):
     billiard = basic_chaotic_billiard
     assert billiard is not None
+
+
+def test_boundary_returns_correct_number_of_points(
+    basic_chaotic_billiard: OvalLikeBilliard,
+):
+    """Ensure the boundary generator yields the exact number of requested points."""
+    num_points = 500
+    points_iterator = basic_chaotic_billiard.boundary(num_points=num_points)
+
+    # Convert iterator to list to count and evaluate
+    points = list(points_iterator)
+
+    assert len(points) == num_points
+
+
+def test_boundary_yields_valid_cartesian_coordinates(
+    basic_chaotic_billiard: OvalLikeBilliard,
+):
+    """Verify that the boundary method converts polar to Cartesian properly."""
+    points_iterator = basic_chaotic_billiard.boundary(num_points=10)
+
+    for x, y in points_iterator:
+        # Check that types are strictly floats, not arrays or Any
+        assert isinstance(x, float) or isinstance(x, np.float64)
+        assert isinstance(y, float) or isinstance(y, np.float64)
+        # Ensure no NaNs or Infs leaked through the linspace math
+        assert np.isfinite(x)
+        assert np.isfinite(y)
+
+
+# --- Tests for boundary_derivative() ---
+
+
+def test_boundary_derivative_at_zero(basic_chaotic_billiard: OvalLikeBilliard):
+    """
+    Test derivative at theta = 0.
+    Because sin(m * 0) is 0, the entire numerator should evaluate to 0.0.
+    """
+    derivative = basic_chaotic_billiard.boundary_derivative(theta=0.0)
+
+    assert derivative == pytest.approx(0.0)
+
+
+def test_boundary_derivative_at_peak(basic_chaotic_billiard: OvalLikeBilliard):
+    """
+    Test derivative at a known peak.
+    With mode=3, setting theta = pi/6 makes (mode * theta) = pi/2.
+    sin(pi/2) = 1, cos(pi/2) = 0.
+    Equation: (1.0 * 0.2 * 3 * 1) / (1 + 0)^2 = 0.6.
+    """
+    # Peak occurs where mode * theta = pi/2
+    theta_peak = np.pi / 6
+    derivative = basic_chaotic_billiard.boundary_derivative(theta=theta_peak)
+
+    assert derivative == pytest.approx(0.6)
+
+
+def test_boundary_derivative_accepts_kwargs_unpacking(
+    basic_chaotic_billiard: OvalLikeBilliard,
+):
+    """Verify that passing dictionary unpacking works as intended by the TypedDict."""
+    kwargs = {"theta": np.pi / 6}
+    derivative = basic_chaotic_billiard.boundary_derivative(**kwargs)
+
+    assert derivative == pytest.approx(0.6)
 
 
 # def test_logging_and_heartbeat_coverage(tmp_path, monkeypatch):
