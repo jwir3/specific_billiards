@@ -62,9 +62,7 @@ class OvalLikeBilliard(Billiard):
         return theta
 
     @override
-    def boundary_point(
-        self, **kwargs: Unpack[ResolverKwargs]
-    ) -> float | tuple[float, float]:
+    def boundary_point(self, **kwargs: Unpack[ResolverKwargs]) -> float:
         """
         Calculate the boundary radius at angle theta.
 
@@ -118,3 +116,25 @@ class OvalLikeBilliard(Billiard):
         ) / ((1.0 + self.eccentricity * np.cos(self.m * theta)) ** 2)
 
         return float(derivative)
+
+    def boundary_point_cartesian(self, theta: float) -> tuple[float, float, float]:
+        """
+        Convert polar coordinates on the boundary to Cartesian.
+
+        Because our boundary is defined between 0 and 2π in polar coordinates, we can find a point on the boundary
+        in Cartesian coordinates by first finding the radius at the given value of theta and then using this to
+        find the x and y coordinates.
+
+        Parameters:
+            - theta: The angle, in polar coordinates, of the ray where the boundary point should be found.
+
+        Returns:
+            A tuple containing the following values:
+                - x: The x coordinate of the point.
+                - y: The y coordinate of the point.
+                - r: The radius of the billiard at the given theta value.
+        """
+        r: float = self.boundary_point(theta=theta)
+        x: float = r * np.cos(theta)
+        y: float = r * np.sin(theta)
+        return (x, y, r)

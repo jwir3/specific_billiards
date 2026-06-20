@@ -81,6 +81,31 @@ def test_boundary_derivative_accepts_kwargs_unpacking(
     assert derivative == pytest.approx(0.6)
 
 
+def test_boundary_point_cartesian(basic_chaotic_billiard: OvalLikeBilliard):
+    """
+    Tests the Cartesian conversion for the boundary using known mathematical
+    constants from the basic_chaotic_billiard fixture (r0=1.0, eps=0.2, m=3).
+    """
+    # Test 1: theta = 0
+    # r(0) = 1.0 / (1 + 0.2 * cos(0)) = 1 / 1.2 = 5/6
+    theta_1 = 0.0
+    x1, y1, r1 = basic_chaotic_billiard.boundary_point_cartesian(theta_1)
+
+    # We use pytest.approx() to allow a tiny tolerance for floating-point math
+    assert r1 == pytest.approx(5 / 6)
+    assert x1 == pytest.approx(5 / 6)  # x = r * cos(0) = r * 1
+    assert y1 == pytest.approx(0.0)  # y = r * sin(0) = r * 0
+
+    # Test 2: theta = pi / 6
+    # r(pi/6) = 1.0 / (1 + 0.2 * cos(3 * pi/6)) = 1.0 / (1 + 0) = 1.0
+    theta_2 = np.pi / 6
+    x2, y2, r2 = basic_chaotic_billiard.boundary_point_cartesian(theta_2)
+
+    assert r2 == pytest.approx(1.0)
+    assert x2 == pytest.approx(np.cos(np.pi / 6))  # x = 1.0 * cos(pi/6) ≈ 0.866
+    assert y2 == pytest.approx(0.5)  # y = 1.0 * sin(pi/6) = 0.5
+
+
 # def test_logging_and_heartbeat_coverage(tmp_path, monkeypatch):
 #     """
 #     Forces get_convergence_data to execute the CSV logging and
